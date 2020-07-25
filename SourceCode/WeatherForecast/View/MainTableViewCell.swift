@@ -15,6 +15,26 @@ class MainTableViewCell: UITableViewCell {
   
   let kelbin: Double = 273.15
   
+  var currnetWeatherData: ForecastWeatherDataModel? {
+    didSet {
+      guard let data = currnetWeatherData else { return }
+      // 켈빈 -> 화씨
+      if let time = data.time,
+        let imageName = data.weatherImageName {
+        weatherIconImageView.image = UIImage(named: imageName)
+        
+        let time = Date(timeIntervalSince1970: TimeInterval(time))
+        let dayString = self.dayFormatter.string(from: time)
+        let timeString = self.hourMinutesFormatter.string(from: time)
+        let monthDayString = self.monthDayFormatter.string(from: time)
+        
+        dataLabel.text = "\(monthDayString) \(dayString)"
+        timeDataLabel.text = "\(timeString)"
+      }
+      degreeLabel.text = "\(Int(data.currentTemp - kelbin))°"
+    }
+  }
+  
   let hourMinutesFormatter: DateFormatter = {
     let formatter = DateFormatter()
     formatter.locale = Locale(identifier: "ko_kr")

@@ -9,7 +9,30 @@
 import UIKit
 
 class MainTableHeaderView: UIView {
-
+  
+  // MARK: - Properties
+  let kelbin: Double = 273.15
+  
+  var currnetWeatherData: CurrnetWeatherDataModel? {
+    didSet {
+      guard let data = currnetWeatherData else { return }
+      guard let getTopTemp = data.topTemp,
+        let getBottomTemp = data.bottomTemp else { return }
+      // 켈빈 -> 화씨
+      let currentTemp = data.currentTemp - kelbin
+      let topTemp = getTopTemp - kelbin
+      let bottomTemp = getBottomTemp - kelbin
+      
+      if let imageName = data.weatherImageName {
+        weatherIconImageView.image = UIImage(named: imageName )
+      }
+      
+      weatherStringtLabel.text = data.weatherDescription
+      topBottomDegreeLabel.text = "⤓ \(bottomTemp)° ⤒ \(topTemp)°"
+      degreeLabel.text = "\(floor(currentTemp*10)/10)°"
+    }
+  }
+  
   let weatherIconImageView: UIImageView = {
      let imageView = UIImageView()
      imageView.image = UIImage(named: "01d")
