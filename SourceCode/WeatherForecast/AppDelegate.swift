@@ -16,9 +16,15 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     
     let weatherForecastVC = WeatherForecastVC()
     
+    let navigationController = UINavigationController(rootViewController: weatherForecastVC)
+    let naviBar = navigationController.navigationBar
+    naviBar.setBackgroundImage(UIImage(), for: .default)
+    naviBar.shadowImage = UIImage()
+    naviBar.backgroundColor = .clear
+    
     window = UIWindow(frame: UIScreen.main.bounds)
     
-    window?.rootViewController = weatherForecastVC
+    window?.rootViewController = navigationController
     window?.makeKeyAndVisible()
     
     return true
