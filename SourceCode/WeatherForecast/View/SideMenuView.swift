@@ -10,6 +10,8 @@ import UIKit
 
 class SideMenuView: UIView {
   
+  // MARK: - Properties
+  var weatherForecastVC: WeatherForecastVC? 
   let loginButton: UIButton = {
     let button = UIButton()
     
@@ -37,7 +39,7 @@ class SideMenuView: UIView {
     return button
   }()
   
-  let closeButton: UIButton = {
+  lazy var closeButton: UIButton = {
     let button = UIButton()
     
     let configuration =  UIImage.SymbolConfiguration.init(pointSize: 40, weight: .medium)
@@ -45,6 +47,8 @@ class SideMenuView: UIView {
     
     button.setImage(UIImage(systemName: "xmark"), for: .normal)
     button.imageView?.tintColor = .white
+    
+    button.addTarget(self, action: #selector(tabCloseButton), for: .touchUpInside)
     return button
   }()
   
@@ -59,6 +63,7 @@ class SideMenuView: UIView {
     return tview
   }()
   
+  // MARK: - Init
   
   override init(frame: CGRect) {
     super.init(frame: frame)
@@ -102,6 +107,14 @@ class SideMenuView: UIView {
 
   required init?(coder: NSCoder) {
     fatalError("init(coder:) has not been implemented")
+  }
+  
+  // MARK: - handler
+  
+  @objc func tabCloseButton() {
+    print("tab cancelbutton in view")
+    weatherForecastVC!.tabShowSideMenu()
+    
   }
   
   

@@ -112,9 +112,6 @@ extension FindCityVC: UISearchBarDelegate {
     print(searchText)
     // 텍스트를 통해서 주소 검색
     searchCityInfomation(searchText: searchText)
-//    DispatchQueue.main.async {
-//      self.searchCityInfomation(searchText: searchText)
-//    }
   }
   
   func searchBarResultsListButtonClicked(_ searchBar: UISearchBar) {
@@ -164,7 +161,9 @@ extension FindCityVC: UITableViewDataSource {
 extension FindCityVC: UITableViewDelegate {
   
   func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-    print("Selected",indexPath.row)
+    
+    print(matchingItems[indexPath.row].placemark.coordinate)
+    
   }
   
   

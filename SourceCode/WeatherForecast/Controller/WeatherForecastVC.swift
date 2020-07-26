@@ -12,12 +12,16 @@ import CoreLocation
 class WeatherForecastVC: UIViewController {
   
   // MARK: - Properties
+  var userCityList: [CityModel] = []
+  
   let locationManager = CLLocationManager()
   let lastLocation = CLLocationCoordinate2D()
   
   var forecastData: [ForecastWeatherDataModel] = []
   
   let mainTableHeaderView = MainTableHeaderView()
+  
+  // 여러개의 도시를 보여주기 위한 스크롤뷰
   
   // 네비게이션 바의 회전을 위한 커스텀 뷰 적용
   let customBarView = UIView(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
@@ -33,7 +37,12 @@ class WeatherForecastVC: UIViewController {
   // SideMenu 관련 Properties
   
   // 왼쪽 상단 버튼 클릭시 보여지는 사용자 프로필 뷰
-  var sideMenuView = SideMenuView()
+  lazy var sideMenuView: SideMenuView = {
+    let view = SideMenuView()
+    view.weatherForecastVC = self
+    return view
+  }()
+  
   var isShowDetailView: Bool = false
   
   // 위아래 스크롤 시 블러 처리
@@ -72,6 +81,12 @@ class WeatherForecastVC: UIViewController {
   // MARK: - Life Cycle
   override func viewDidLoad() {
     super.viewDidLoad()
+    
+    userCityList.append(CityModel.init(name: "서울", address: "서울특별시 대한밍국", coordinate: CLLocationCoordinate2D(latitude: 37.502045, longitude: 127.110361)))
+    userCityList.append(CityModel.init(name: "파리", address: "파리, 프랑스", coordinate: CLLocationCoordinate2D(latitude: 48.8567879, longitude: 2.3510768)))
+    
+    //CLLocationCoordinate2D(latitude: 48.8567879, longitude: 2.3510768) 파리
+    //CLLocationCoordinate2D(latitude: 37.502045, longitude: 127.110361) 한국
     
     configureNavigationBar()
     
@@ -165,8 +180,6 @@ class WeatherForecastVC: UIViewController {
       sideMenuView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
       sideMenuView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7)
     ])
-    
-    sideMenuView.closeButton.addTarget(self, action: #selector(tabShowSideMenu), for: .touchUpInside)
   }
   
   func scrollViewDidScroll(_ scrollView: UIScrollView) {
