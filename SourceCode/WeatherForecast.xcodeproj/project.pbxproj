@@ -18,6 +18,7 @@
 		C7FF2E2C24CC761600A9BBFC /* ForecastWeatherDataModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7FF2E2B24CC761600A9BBFC /* ForecastWeatherDataModel.swift */; };
 		C7FF2E2E24CC814F00A9BBFC /* FindCityVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7FF2E2D24CC814F00A9BBFC /* FindCityVC.swift */; };
 		C7FF2E3024CC817000A9BBFC /* CommonUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7FF2E2F24CC817000A9BBFC /* CommonUI.swift */; };
+		C7FF2E3224CC829600A9BBFC /* SideMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7FF2E3124CC829600A9BBFC /* SideMenuView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +35,7 @@
 		C7FF2E2B24CC761600A9BBFC /* ForecastWeatherDataModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ForecastWeatherDataModel.swift; sourceTree = "<group>"; };
 		C7FF2E2D24CC814F00A9BBFC /* FindCityVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindCityVC.swift; sourceTree = "<group>"; };
 		C7FF2E2F24CC817000A9BBFC /* CommonUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommonUI.swift; sourceTree = "<group>"; };
+		C7FF2E3124CC829600A9BBFC /* SideMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SideMenuView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +101,7 @@
 			children = (
 				C7FF2E2124CC4DF600A9BBFC /* MainTableHeaderView.swift */,
 				C7FF2E2324CC4ED000A9BBFC /* MainTableViewCell.swift */,
+				C7FF2E3124CC829600A9BBFC /* SideMenuView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -202,6 +205,7 @@
 			files = (
 				C7FF2E2A24CC737C00A9BBFC /* NetworkServices.swift in Sources */,
 				C7FF2E2224CC4DF600A9BBFC /* MainTableHeaderView.swift in Sources */,
+				C7FF2E3224CC829600A9BBFC /* SideMenuView.swift in Sources */,
 				C7FF2E2C24CC761600A9BBFC /* ForecastWeatherDataModel.swift in Sources */,
 				C7FF2E2024CC484E00A9BBFC /* WeatherForecastVC.swift in Sources */,
 				C7FF2E2724CC509D00A9BBFC /* CurrentWeatherModel.swift in Sources */,

@@ -30,6 +30,12 @@ class WeatherForecastVC: UIViewController {
     didSet { blurEffectView.alpha = blurAlphaPoint }
   }
   
+  // SideMenu 관련 Properties
+  
+  // 왼쪽 상단 버튼 클릭시 보여지는 사용자 프로필 뷰
+  var sideMenuView = SideMenuView()
+  var isShowDetailView: Bool = false
+  
   // 위아래 스크롤 시 블러 처리
   let blurEffectView: UIVisualEffectView = {
     let blurEffect = UIBlurEffect(style: .systemMaterialDark)
@@ -75,13 +81,7 @@ class WeatherForecastVC: UIViewController {
     
     guard let location = locationManager.location?.coordinate else { return }
     getCurrentWeatherData(location: location)
-    
-    NetworkServcies.fetchForecastWeatherData(location: location) { (forecastWeatherDataModel) in
-      DispatchQueue.main.async {
-        self.forecastData.append(forecastWeatherDataModel)
-        self.tableView.reloadData()
-      }
-    }
+    getForecastWeatherData(location: location)
     
     configureAutoLayout()
   }
@@ -126,7 +126,7 @@ class WeatherForecastVC: UIViewController {
       image: detailMenuImage,
       style: .plain,
       target: self,
-      action: #selector(tabShowDetailMenu)
+      action: #selector(tabShowSideMenu)
     )
     navigationItem.leftBarButtonItem?.tintColor = .white
   }
@@ -153,6 +153,20 @@ class WeatherForecastVC: UIViewController {
     
     mainImageView.addSubview(blurEffectView)
     blurEffectView.frame = mainImageView.frame
+    
+    [sideMenuView].forEach{
+      view.addSubview($0)
+      $0.translatesAutoresizingMaskIntoConstraints = false
+    }
+    
+    NSLayoutConstraint.activate([
+      sideMenuView.topAnchor.constraint(equalTo: view.topAnchor),
+      sideMenuView.trailingAnchor.constraint(equalTo: view.leadingAnchor),
+      sideMenuView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+      sideMenuView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7)
+    ])
+    
+    sideMenuView.closeButton.addTarget(self, action: #selector(tabShowSideMenu), for: .touchUpInside)
   }
   
   func scrollViewDidScroll(_ scrollView: UIScrollView) {
@@ -200,6 +214,22 @@ class WeatherForecastVC: UIViewController {
     }
   }
   
+  func getForecastWeatherData(location: CLLocationCoordinate2D) {
+    print("remove Start")
+    forecastData.removeAll()
+    print("remove Finish")
+    NetworkServcies.fetchForecastWeatherData(location: location) { (forecastWeatherDataModel) in
+      DispatchQueue.main.async {
+        print("Append Start")
+        self.forecastData.append(forecastWeatherDataModel)
+        print("Append finish")
+        print("reload Start")
+        self.tableView.reloadData()
+        print("reload Start")
+      }
+    }
+  }
+  
   // MARK: - Handler
   
   @objc func tabReloadButton(_ sender: UIButton) {
@@ -221,17 +251,41 @@ class WeatherForecastVC: UIViewController {
       if finish {
         guard let location = self.locationManager.location?.coordinate else { return }
         self.getCurrentWeatherData(location: location)
+        self.getForecastWeatherData(location: location)
       }
     }
   }
   
-  @objc func tabShowDetailMenu() {
-    print("tabShowDetailMenu")
+  @objc func tabShowSideMenu() {
+    if isShowDetailView {
+      // 프로필 디테일뷰가 이미 보여진 경우 ( 보임 -> 숨김 )
+      
+      UIView.animate(withDuration: 0.5) {
+        // view 자체를 옮기며 오토 레이아웃이 재대로 동작을 안하는듯
+        // view 위에 올라가 있는 대상만 이동 위치를 변경하는 에니메이션 적용
+//        self.topBlurAlphaPoint = 0
+        guard let naviBar = self.navigationController?.navigationBar else { return }
+        [naviBar, self.mainImageView, self.tableView, self.sideMenuView].forEach {
+          $0?.center.x = ($0?.center.x)! - self.view.frame.width*0.7
+        }
+      }
+    } else {
+      // 프로필 디테일뷰가 닫혀있는 경우 ( 숨김 -> 보임 )
+      UIView.animate(withDuration: 0.5) {
+//        self.topBlurAlphaPoint = 0.9
+        guard let naviBar = self.navigationController?.navigationBar else { return }
+        [naviBar, self.mainImageView, self.tableView, self.sideMenuView].forEach {
+          $0?.center.x = ($0?.center.x)! + self.view.frame.width*0.7
+        }
+      }
+    }
+    isShowDetailView.toggle()
   }
   
   @objc func tabAddCityButton() {
     print("tabAddCityButton")
     let findCityVC = FindCityVC()
+    findCityVC.locationManager = locationManager
     navigationController?.pushViewController(findCityVC, animated: true)
   }
   
