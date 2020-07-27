@@ -19,6 +19,7 @@ class MainTableViewCell: UITableViewCell {
     didSet {
       guard let data = currnetWeatherData else { return }
       // 켈빈 -> 화씨
+      
       if let time = data.time,
         let imageName = data.weatherImageName {
         weatherIconImageView.image = UIImage(named: imageName)

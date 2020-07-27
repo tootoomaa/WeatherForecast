@@ -14,14 +14,19 @@ class WeatherForecastVC: UIViewController {
   // MARK: - Properties
   var userCityList: [CityModel] = []
   
-  let locationManager = CLLocationManager()
-  let lastLocation = CLLocationCoordinate2D()
+  var locationManager = CLLocationManager()
+  var lastLocation = CLLocationCoordinate2D()
   
   var forecastData: [ForecastWeatherDataModel] = []
   
   let mainTableHeaderView = MainTableHeaderView()
   
   // 여러개의 도시를 보여주기 위한 스크롤뷰
+  let scrollView: UIScrollView = {
+    let scrollView = UIScrollView(frame: .zero)
+    scrollView.isPagingEnabled = true
+    return scrollView
+  }()
   
   // 네비게이션 바의 회전을 위한 커스텀 뷰 적용
   let customBarView = UIView(frame: CGRect(x: 0, y: 0, width: 50, height: 50))
@@ -82,11 +87,17 @@ class WeatherForecastVC: UIViewController {
   override func viewDidLoad() {
     super.viewDidLoad()
     
+    //1.fetch data
     userCityList.append(CityModel.init(name: "서울", address: "서울특별시 대한밍국", coordinate: CLLocationCoordinate2D(latitude: 37.502045, longitude: 127.110361)))
     userCityList.append(CityModel.init(name: "파리", address: "파리, 프랑스", coordinate: CLLocationCoordinate2D(latitude: 48.8567879, longitude: 2.3510768)))
     
     //CLLocationCoordinate2D(latitude: 48.8567879, longitude: 2.3510768) 파리
     //CLLocationCoordinate2D(latitude: 37.502045, longitude: 127.110361) 한국
+    
+    //2. configure ScrollView
+    configureScrollView()
+    
+    //3.
     
     configureNavigationBar()
     
@@ -101,7 +112,49 @@ class WeatherForecastVC: UIViewController {
     configureAutoLayout()
   }
   
-  private func configureNavigationBar() {
+  private func configureScrollView() {
+    
+//    let viewWidth = UIScreen.main.bounds.width
+//    scrollView.contentSize = CGSize(width: view.frame.width * CGFloat(userCityList.count), height: 3000)
+//    
+//    for index in userCityList.indices {
+//      
+//      let xPosition = viewWidth * CGFloat(index)
+//      
+//      let weatherForecast = WeatherForecastVC()
+////      guard let cityInfo = userCityList[index] as? CityModel else { return }
+//      weatherForecast.lastLocation = userCityList[index].coordinate
+//      
+//      weatherForecast.view.frame = CGRect(x: xPosition, y: 0,
+//                               width: viewWidth,
+//                               height: 3000)
+//      
+//      scrollView.contentSize.width = viewWidth * CGFloat(1+index)
+//      
+//      scrollView.addSubview(weatherForecast)
+//    }
+//    
+//    for i in 0..<currentCafeImage.count{
+//      
+//      let imageView = UIImageView()
+//      imageView.image = currentCafeImage[i]
+//      imageView.contentMode = .scaleToFill //scaleAspectFit //  사진의 비율을 맞춤.
+//      
+//      let xPosition = viewWidth * CGFloat(i)
+//      
+//      imageView.frame = CGRect(x: xPosition, y: 0,
+//                               width: viewWidth,
+//                               height: viewWidth*1.1)
+//      
+//      horizionScrollView.contentSize.width = viewWidth * CGFloat(1+i)
+//      
+//      horizionScrollView.addSubview(imageView)
+//      
+//    }
+    
+  }
+  
+   private func configureNavigationBar() {
     self.navigationItem.titleView = titleLabel
 
     // right Bar Button [ reloadData ]
@@ -148,22 +201,31 @@ class WeatherForecastVC: UIViewController {
   
   private func configureAutoLayout() {
     
+    view.addSubview(scrollView)
+    scrollView.translatesAutoresizingMaskIntoConstraints = false
+    NSLayoutConstraint.activate([
+      scrollView.topAnchor.constraint(equalTo: view.topAnchor),
+      scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+      scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+      scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+    ])
+    
     [mainImageView, blurEffectView].forEach{
-      view.addSubview($0)
+      scrollView.addSubview($0)
       $0.translatesAutoresizingMaskIntoConstraints = false
-      $0.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-      $0.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -20).isActive = true
-      $0.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-      $0.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+      $0.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor).isActive = true
+      $0.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: -20).isActive = true
+      $0.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor).isActive = true
+      $0.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor).isActive = true
     }
     
     [tableView].forEach{
       view.addSubview($0)
       $0.translatesAutoresizingMaskIntoConstraints = false
-      $0.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-      $0.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
-      $0.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
-      $0.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+      $0.topAnchor.constraint(equalTo: scrollView.topAnchor).isActive = true
+      $0.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor).isActive = true
+      $0.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor).isActive = true
+      $0.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor).isActive = true
     }
     
     mainImageView.addSubview(blurEffectView)

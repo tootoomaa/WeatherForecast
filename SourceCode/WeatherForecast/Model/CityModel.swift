@@ -21,6 +21,4 @@ class CityModel {
     self.address = address
     self.coordinate = coordinate
   }
-  
-  
 }
