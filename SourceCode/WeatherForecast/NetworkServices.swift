@@ -12,10 +12,10 @@ import CoreLocation
 
 class NetworkServcies {
   
-  static private let myApi: String = "a312f4e6a3bd2a9b460d3a7075990340"
+  private let myApi: String = "a312f4e6a3bd2a9b460d3a7075990340"
   
   // MARK: - fetch JSON data
-  static func fetchCurrentWeatherDataByLocation(location: CLLocationCoordinate2D, completion: @escaping(CurrnetWeatherDataModel) -> ()) {
+  func fetchCurrentWeatherDataByLocation(location: CLLocationCoordinate2D, completion: @escaping(CurrnetWeatherDataModel) -> ()) {
 
     //    print(location.latitude)
     //    print(location.longitude)
@@ -42,7 +42,7 @@ class NetworkServcies {
         guard let subWeatherData = jsonObject["weather"] as? [[String: Any]] else { return }
 
         let time = jsonObject["dt"] as! Int
-
+        // 데이터 전달을 위한 데이터 셋 생성
         if let weatherImageName = subWeatherData[0]["icon"] as? String,
           let weatherDescription = subWeatherData[0]["main"] as? String,
           let topTemp = subMainData["temp_max"],
@@ -57,7 +57,7 @@ class NetworkServcies {
             currentTemp: currentTtemp,
             time: time
           )
-
+          // 컴플리션 블록을 통한 결과 값 전달
           completion(currnetWeatherData)
         } else {
           print("Make DataSet Fail in CurrnetWeather")
@@ -67,7 +67,7 @@ class NetworkServcies {
     }.resume()
   }
   
-  static func fetchForecastWeatherData(location: CLLocationCoordinate2D, completion: @escaping(ForecastWeatherDataModel) -> ()) {
+  func fetchForecastWeatherData(location: CLLocationCoordinate2D, completion: @escaping(ForecastWeatherDataModel) -> ()) {
 
     let urlString = "https://api.openweathermap.org/data/2.5/forecast?lat=\(location.latitude)&lon=\(location.longitude)&appid=\(myApi)"
 

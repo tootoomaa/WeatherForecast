@@ -12,14 +12,22 @@ import CoreLocation
 class WeatherForecastVC: UIViewController {
   
   // MARK: - Properties
-  var userCityList: [CityModel] = []
   
-  var locationManager = CLLocationManager()
+  lazy var locationManager: CLLocationManager = {
+    var manager = CLLocationManager()
+    manager.delegate = self
+    return manager
+  }()
+  
   var lastLocation = CLLocationCoordinate2D()
   
   var forecastData: [ForecastWeatherDataModel] = []
   
+  let networkService = NetworkServcies()
+  
   let mainTableHeaderView = MainTableHeaderView()
+  
+  var locationAuthorizaionAccept: Bool = false
   
   // 여러개의 도시를 보여주기 위한 스크롤뷰
   let scrollView: UIScrollView = {
@@ -38,17 +46,6 @@ class WeatherForecastVC: UIViewController {
   var blurAlphaPoint: CGFloat = 0 {
     didSet { blurEffectView.alpha = blurAlphaPoint }
   }
-  
-  // SideMenu 관련 Properties
-  
-  // 왼쪽 상단 버튼 클릭시 보여지는 사용자 프로필 뷰
-  lazy var sideMenuView: SideMenuView = {
-    let view = SideMenuView()
-    view.weatherForecastVC = self
-    return view
-  }()
-  
-  var isShowDetailView: Bool = false
   
   // 위아래 스크롤 시 블러 처리
   let blurEffectView: UIVisualEffectView = {
@@ -83,80 +80,29 @@ class WeatherForecastVC: UIViewController {
     return imageView
   }()
   
+  let titleTimeDateFormatter: DateFormatter = {
+    let mydate = DateFormatter()
+    mydate.locale = Locale(identifier: "ko_kr")
+    mydate.dateFormat = "a HH:mm"
+    return mydate
+  }()
+  
   // MARK: - Life Cycle
   override func viewDidLoad() {
     super.viewDidLoad()
     
-    //1.fetch data
-    userCityList.append(CityModel.init(name: "서울", address: "서울특별시 대한밍국", coordinate: CLLocationCoordinate2D(latitude: 37.502045, longitude: 127.110361)))
-    userCityList.append(CityModel.init(name: "파리", address: "파리, 프랑스", coordinate: CLLocationCoordinate2D(latitude: 48.8567879, longitude: 2.3510768)))
-    
-    //CLLocationCoordinate2D(latitude: 48.8567879, longitude: 2.3510768) 파리
-    //CLLocationCoordinate2D(latitude: 37.502045, longitude: 127.110361) 한국
-    
-    //2. configure ScrollView
-    configureScrollView()
-    
-    //3.
-    
     configureNavigationBar()
-    
-    locationManager.delegate = self
     
     checkAutorizationStatus()
     
-    guard let location = locationManager.location?.coordinate else { return }
-    getCurrentWeatherData(location: location)
-    getForecastWeatherData(location: location)
+    fetchWeatherData()
     
     configureAutoLayout()
   }
-  
-  private func configureScrollView() {
-    
-//    let viewWidth = UIScreen.main.bounds.width
-//    scrollView.contentSize = CGSize(width: view.frame.width * CGFloat(userCityList.count), height: 3000)
-//    
-//    for index in userCityList.indices {
-//      
-//      let xPosition = viewWidth * CGFloat(index)
-//      
-//      let weatherForecast = WeatherForecastVC()
-////      guard let cityInfo = userCityList[index] as? CityModel else { return }
-//      weatherForecast.lastLocation = userCityList[index].coordinate
-//      
-//      weatherForecast.view.frame = CGRect(x: xPosition, y: 0,
-//                               width: viewWidth,
-//                               height: 3000)
-//      
-//      scrollView.contentSize.width = viewWidth * CGFloat(1+index)
-//      
-//      scrollView.addSubview(weatherForecast)
-//    }
-//    
-//    for i in 0..<currentCafeImage.count{
-//      
-//      let imageView = UIImageView()
-//      imageView.image = currentCafeImage[i]
-//      imageView.contentMode = .scaleToFill //scaleAspectFit //  사진의 비율을 맞춤.
-//      
-//      let xPosition = viewWidth * CGFloat(i)
-//      
-//      imageView.frame = CGRect(x: xPosition, y: 0,
-//                               width: viewWidth,
-//                               height: viewWidth*1.1)
-//      
-//      horizionScrollView.contentSize.width = viewWidth * CGFloat(1+i)
-//      
-//      horizionScrollView.addSubview(imageView)
-//      
-//    }
-    
-  }
-  
-   private func configureNavigationBar() {
-    self.navigationItem.titleView = titleLabel
 
+  private func configureNavigationBar() {
+    self.navigationItem.titleView = titleLabel
+    
     // right Bar Button [ reloadData ]
     let imageConfigure = UIImage.SymbolConfiguration(pointSize: 20, weight: .heavy)
     let reloadImage = UIImage(systemName: "arrow.clockwise", withConfiguration: imageConfigure)
@@ -176,72 +122,33 @@ class WeatherForecastVC: UIViewController {
     
     let reloadBarButton = UIBarButtonItem.init(customView: customBarView)
     
-    // right Bar button [ plus ]
-    
-    let plusImage = UIImage(systemName: "plus", withConfiguration: imageConfigure)
-    let addCityButton = UIBarButtonItem(image: plusImage, style: .plain, target: self, action: #selector(tabAddCityButton))
-    
-    addCityButton.tintColor = .white
-    
     // add right button
-    navigationItem.setRightBarButtonItems([reloadBarButton, addCityButton], animated: true)
-    
-    // left Bar Button
-    
-    let detailMenuImage = UIImage(systemName: "line.horizontal.3", withConfiguration: imageConfigure)
-    
-    navigationItem.leftBarButtonItem = UIBarButtonItem(
-      image: detailMenuImage,
-      style: .plain,
-      target: self,
-      action: #selector(tabShowSideMenu)
-    )
-    navigationItem.leftBarButtonItem?.tintColor = .white
+    navigationItem.setRightBarButtonItems([reloadBarButton], animated: true)
   }
   
   private func configureAutoLayout() {
     
-    view.addSubview(scrollView)
-    scrollView.translatesAutoresizingMaskIntoConstraints = false
-    NSLayoutConstraint.activate([
-      scrollView.topAnchor.constraint(equalTo: view.topAnchor),
-      scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-      scrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-      scrollView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-    ])
-    
     [mainImageView, blurEffectView].forEach{
-      scrollView.addSubview($0)
+      view.addSubview($0)
       $0.translatesAutoresizingMaskIntoConstraints = false
-      $0.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor).isActive = true
-      $0.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: -20).isActive = true
-      $0.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor).isActive = true
-      $0.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor).isActive = true
+      $0.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+      $0.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: -20).isActive = true
+      $0.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+      $0.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
     }
     
     [tableView].forEach{
       view.addSubview($0)
       $0.translatesAutoresizingMaskIntoConstraints = false
-      $0.topAnchor.constraint(equalTo: scrollView.topAnchor).isActive = true
-      $0.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor).isActive = true
-      $0.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor).isActive = true
-      $0.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor).isActive = true
+      $0.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+      $0.leadingAnchor.constraint(equalTo: view.leadingAnchor).isActive = true
+      $0.trailingAnchor.constraint(equalTo: view.trailingAnchor).isActive = true
+      $0.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
     }
     
     mainImageView.addSubview(blurEffectView)
     blurEffectView.frame = mainImageView.frame
     
-    [sideMenuView].forEach{
-      view.addSubview($0)
-      $0.translatesAutoresizingMaskIntoConstraints = false
-    }
-    
-    NSLayoutConstraint.activate([
-      sideMenuView.topAnchor.constraint(equalTo: view.topAnchor),
-      sideMenuView.trailingAnchor.constraint(equalTo: view.leadingAnchor),
-      sideMenuView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-      sideMenuView.widthAnchor.constraint(equalTo: view.widthAnchor, multiplier: 0.7)
-    ])
   }
   
   func scrollViewDidScroll(_ scrollView: UIScrollView) {
@@ -255,9 +162,11 @@ class WeatherForecastVC: UIViewController {
     if scrollView.contentOffset.y > 0 && scrollView.contentOffset.y < 500 {
       
       if tempValue > scrollView.contentOffset.y  {
+        // 스크롤이 아래로 이동할 떄
         mainImageView.center.x -= scrollView.contentOffset.y / 1000
         blurEffectView.center.x -= scrollView.contentOffset.y / 1000
       } else {
+        // 스크롤이 위로 이동할 때
         mainImageView.center.x += scrollView.contentOffset.y / 2000
         blurEffectView.center.x += scrollView.contentOffset.y / 2000
       }
@@ -272,96 +181,88 @@ class WeatherForecastVC: UIViewController {
   
   // MARK: - Network Handler
   func getCurrentWeatherData(location: CLLocationCoordinate2D) {
-    NetworkServcies.fetchCurrentWeatherDataByLocation(location: location) { (currentWeatherData) in
+    networkService.fetchCurrentWeatherDataByLocation(location: location) { (currentWeatherData) in
       DispatchQueue.main.async {
-        if let time = currentWeatherData.time {
-          let mydate = DateFormatter()
-          mydate.locale = Locale(identifier: "ko_kr")
-          mydate.dateFormat = "a HH:mm"
-          
-          let lastUpddatTime = mydate.string(from: Date(timeIntervalSince1970: TimeInterval(time)))
-          
-          self.titleLabel.text = "Seoul\n\(lastUpddatTime)"
-        }
         
-        self.mainTableHeaderView.currnetWeatherData = currentWeatherData
+        // 현재 위치를 기반으로 도시 이름을 가져오는 함수
+        self.geocode(latitude: location.latitude, longitude: location.longitude) { (placemark, error) in
+          if let error = error {
+            print("error",error.localizedDescription)
+            return
+          }
+          // 옵셔널 처리를 위한 guard 문
+          guard let place = placemark?.first else { return }
+          guard let cityName = place.administrativeArea else { return }
+          
+          // a HH:mm 으로 Date 포멧
+          if let time = currentWeatherData.time {
+            let lastUpddatTime = self.titleTimeDateFormatter.string(from: Date(timeIntervalSince1970: TimeInterval(time)))
+            // 도시 이름과 상단의 최종 시간
+            self.titleLabel.text = "\(cityName)\n\(lastUpddatTime)"
+          }
+          self.mainTableHeaderView.currnetWeatherData = currentWeatherData
+        }
       }
     }
   }
   
   func getForecastWeatherData(location: CLLocationCoordinate2D) {
-    print("remove Start")
     forecastData.removeAll()
-    print("remove Finish")
-    NetworkServcies.fetchForecastWeatherData(location: location) { (forecastWeatherDataModel) in
+    networkService.fetchForecastWeatherData(location: location) { (forecastWeatherDataModel) in
       DispatchQueue.main.async {
-        print("Append Start")
         self.forecastData.append(forecastWeatherDataModel)
-        print("Append finish")
-        print("reload Start")
         self.tableView.reloadData()
-        print("reload Start")
       }
     }
   }
   
   // MARK: - Handler
   
+  private func fetchWeatherData() {
+    if let location = locationManager.location?.coordinate {
+      getCurrentWeatherData(location: location)
+      getForecastWeatherData(location: location)
+    } else {
+      print("데이터 없음")
+    }
+  }
+  
   @objc func tabReloadButton(_ sender: UIButton) {
     
+    let imageString = ["cloudy","lightning","rainy","sunny"].randomElement()!
+    // 메인 이미지에 대한 에니메이션
+    UIView.transition(with: self.mainImageView,
+                      duration: 0.3,
+                      options: .transitionCrossDissolve,
+                      animations: {
+                        self.mainImageView.image = UIImage(named: imageString)})
+    // 버튼과 테이블에 대한 에니메이션
     UIView.animateKeyframes(withDuration: 1, delay: 0, animations: {
       UIView.addKeyframe(withRelativeStartTime: 0, relativeDuration: 0.25, animations: {
         self.customBarView.transform = self.customBarView.transform.rotated(by: CGFloat(Double.pi / 2))
+        self.tableView.alpha = 0
       })
       UIView.addKeyframe(withRelativeStartTime: 0.25, relativeDuration: 0.25, animations: {
         self.customBarView.transform = self.customBarView.transform.rotated(by: CGFloat(Double.pi / 2))
+        
+        self.tableView.center.x += self.view.frame.width
       })
       UIView.addKeyframe(withRelativeStartTime: 0.5, relativeDuration: 0.25, animations: {
         self.customBarView.transform = self.customBarView.transform.rotated(by: CGFloat(Double.pi / 2))
+        self.tableView.alpha = 1
+        self.tableView.center.x -= self.view.frame.width
       })
       UIView.addKeyframe(withRelativeStartTime: 0.75, relativeDuration: 0.25, animations: {
         self.customBarView.transform = self.customBarView.transform.rotated(by: CGFloat(Double.pi / 2))
       })
     }) { (finish) in
       if finish {
+        // 에니메이션 종료 후 데이터 갱신
         guard let location = self.locationManager.location?.coordinate else { return }
         self.getCurrentWeatherData(location: location)
         self.getForecastWeatherData(location: location)
       }
     }
-  }
-  
-  @objc func tabShowSideMenu() {
-    if isShowDetailView {
-      // 프로필 디테일뷰가 이미 보여진 경우 ( 보임 -> 숨김 )
-      
-      UIView.animate(withDuration: 0.5) {
-        // view 자체를 옮기며 오토 레이아웃이 재대로 동작을 안하는듯
-        // view 위에 올라가 있는 대상만 이동 위치를 변경하는 에니메이션 적용
-//        self.topBlurAlphaPoint = 0
-        guard let naviBar = self.navigationController?.navigationBar else { return }
-        [naviBar, self.mainImageView, self.tableView, self.sideMenuView].forEach {
-          $0?.center.x = ($0?.center.x)! - self.view.frame.width*0.7
-        }
-      }
-    } else {
-      // 프로필 디테일뷰가 닫혀있는 경우 ( 숨김 -> 보임 )
-      UIView.animate(withDuration: 0.5) {
-//        self.topBlurAlphaPoint = 0.9
-        guard let naviBar = self.navigationController?.navigationBar else { return }
-        [naviBar, self.mainImageView, self.tableView, self.sideMenuView].forEach {
-          $0?.center.x = ($0?.center.x)! + self.view.frame.width*0.7
-        }
-      }
-    }
-    isShowDetailView.toggle()
-  }
-  
-  @objc func tabAddCityButton() {
-    print("tabAddCityButton")
-    let findCityVC = FindCityVC()
-    findCityVC.locationManager = locationManager
-    navigationController?.pushViewController(findCityVC, animated: true)
   }
   
 }
@@ -382,6 +283,7 @@ extension WeatherForecastVC: UITableViewDataSource {
   }
   
   func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+    
     guard let cell = tableView.dequeueReusableCell(
       withIdentifier: MainTableViewCell.identifier,
       for: indexPath
@@ -414,20 +316,20 @@ extension WeatherForecastVC: UITableViewDelegate {
 // MARK: - CLLocationManagerDelegate
 extension WeatherForecastVC: CLLocationManagerDelegate {
   func checkAutorizationStatus() {
-    
     switch CLLocationManager.authorizationStatus() {
     case .notDetermined:
       locationManager.requestWhenInUseAuthorization()
     case .restricted, .denied : break
-    case .authorizedWhenInUse:
+    case .authorizedWhenInUse:  // 앱 사용중 허용
       fallthrough
-    case .authorizedAlways:
+    case .authorizedAlways:     // 항상 허용
       startUpdatingLocation()
     @unknown default: fatalError()
     }
   }
   
   func startUpdatingLocation() {
+    // 권한 확인
     let status = CLLocationManager.authorizationStatus()
     guard status == .authorizedAlways || status == .authorizedWhenInUse,
       CLLocationManager.locationServicesEnabled() else { return }
@@ -435,5 +337,21 @@ extension WeatherForecastVC: CLLocationManagerDelegate {
     locationManager.desiredAccuracy = kCLLocationAccuracyBest // 가장 정확하게 측정
     locationManager.distanceFilter = 1000.0 // 1km
     locationManager.startUpdatingLocation()
+    fetchWeatherData()
+  }
+  
+  // 사용자가 최초로 권한은 수정한 뒤 해당 권한을 통해 최초 날씨 데이터 불러옴
+  func locationManager(_ manager: CLLocationManager, didChangeAuthorization status: CLAuthorizationStatus) {
+    fetchWeatherData()
+  }
+  
+  func geocode(latitude: Double, longitude: Double, completion: @escaping (_ placemark: [CLPlacemark]?, _ error: Error?) -> Void)  {
+    CLGeocoder().reverseGeocodeLocation(CLLocation(latitude: latitude, longitude: longitude)) { placemark, error in
+      guard let placemark = placemark, error == nil else {
+        completion(nil, error)
+        return
+      }
+      completion(placemark, nil)
+    }
   }
 }
